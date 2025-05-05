@@ -1,0 +1,55 @@
+
+import streamlit as st
+import joblib
+import pandas as pd
+import numpy as np
+
+# Load the trained model, scaler, and feature names
+model = joblib.load('/content/xgb_model.pkl')
+scaler = joblib.load('/content/scaler.pkl')  # Load the scaler saved during training
+feature_names = joblib.load('/content/feature_names.pkl')
+
+# Function to predict power generation
+def predict_power(input_data):
+    prediction = model.predict(input_data)
+    return prediction
+
+# Title of the app
+st.title("Solar Power Generation Prediction")
+
+# Create input fields for users (adjusted to include the correct features)
+st.sidebar.header("User Inputs")
+
+# User input fields matching feature columns
+distance_to_solar_noon = st.sidebar.slider("Distance to Solar Noon", 0.0, 1.0, 0.5)
+temperature = st.sidebar.slider("Temperature (°C)", -30, 50, 25)
+wind_direction = st.sidebar.slider("Wind Direction (°)", 0, 360, 180)
+wind_speed = st.sidebar.slider("Wind Speed (m/s)", 0.0, 30.0, 5.0)
+sky_cover = st.sidebar.slider("Sky Cover (%)", 0, 100, 50)
+visibility = st.sidebar.slider("Visibility (km)", 0.0, 20.0, 10.0)
+humidity = st.sidebar.slider("Humidity (%)", 0, 100, 50)
+average_pressure = st.sidebar.slider("Average Pressure (hPa)", 950, 1050, 1013)
+
+# Combine inputs into a DataFrame (adjusted to match the model's expected features)
+user_input = pd.DataFrame({
+    'distance-to-solar-noon': [distance_to_solar_noon],
+    'temperature': [temperature],
+    'wind-direction': [wind_direction],
+    'wind-speed': [wind_speed],
+    'sky-cover': [sky_cover],
+    'visibility': [visibility],
+    'humidity': [humidity],
+    'average-pressure-(period)': [average_pressure]
+})
+
+# Apply scaling (using the scaler loaded from 'scaler.pkl', which was used during training)
+scaled_input = scaler.transform(user_input)
+
+# Predict and show the result
+if st.button("Predict Power Generation"):
+    predicted_power = predict_power(scaled_input)
+    st.write(f"Predicted Power Generation (log scale): {predicted_power[0]}")
+    st.write(f"Predicted Power Generation (original scale): {np.expm1(predicted_power[0]):.2f} Joules")
+
+
+
